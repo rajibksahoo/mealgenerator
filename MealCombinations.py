@@ -1,6 +1,11 @@
 import pandas as pd
 import itertools
-def filter_meals(meals_df, target_calories_per_day, target_protein_per_day,exclude_ingredients=None):
+
+
+def filter_meals(meals_df, target_calories_per_day, target_protein_per_day, meal_ids=None, exclude_ingredients=None):
+    # count of meals to be included in our final output
+    meal_ids_count = len(meal_ids) if meal_ids else 0
+
     # Filter meals based on calorie count
     meals_filtered = meals_df[meals_df['Calories'] <= target_calories_per_day]
 
@@ -11,9 +16,22 @@ def filter_meals(meals_df, target_calories_per_day, target_protein_per_day,exclu
                 meals_filtered = meals_filtered[
                     ~meals_filtered['Ingredients'].str.contains(ingredient.strip(), case=False)]
 
-    # Generate all possible combinations of meals
+    # remaining meals from filtered meals
+    if meal_ids:
+        remaining_meals_filtered = meals_filtered[~meals_filtered['Meal Id'].isin(meal_ids)]
+    else:
+        remaining_meals_filtered = meals_filtered.copy()
+
     valid_combinations = []
-    for combo in itertools.combinations(meals_filtered.to_dict('records'), meals_per_day):
+
+    # Generate all possible combinations of meals
+    combinations_remaining_meals = itertools.combinations(remaining_meals_filtered.to_dict('records'),
+                                                          meals_per_day - meal_ids_count)
+
+    for combo in combinations_remaining_meals:
+        # Ensure that all meals from meal_ids are included in the combination
+        combo = list(combo) + [meal for meal in meals_df.to_dict('records') if meal['Meal Id'] in meal_ids]
+
         total_calories = sum(meal['Calories'] for meal in combo)
         total_protein = sum(meal['Protein'] for meal in combo)
         if total_calories == target_calories_per_day and total_protein >= target_protein_per_day:
@@ -24,23 +42,25 @@ def filter_meals(meals_df, target_calories_per_day, target_protein_per_day,exclu
 
 # Read specific columns from the CSV file
 meals_df = pd.read_csv('C:\\Users\\ADMIN\\Documents\\dummy_meals.csv',
-                       usecols=['Name', 'Calories', 'Protein', 'Ingredients'])
+                       usecols=['Meal Id', 'Name', 'Calories', 'Protein', 'Ingredients'])
 
 # Get user input for meals per day, target calorie intake, target protein intake per day,
-# and optional ingredient filters
+# optional ingredient filters, and specific meal IDs
 while True:
     try:
         meals_per_day = int(input("Enter the number of meals per day (e.g., 3 or 4): "))
         target_calories_per_day = int(input("Enter the target total calorie intake per day: "))
         target_protein_per_day = float(input("Enter the target protein intake per day: "))
         exclude_ingredients = input("Enter ingredients to exclude (comma-separated, leave blank for none): ").split(',')
+        meal_ids = input("Enter list of meal IDs to include (comma-separated, leave blank for all): ").split(',')
+        meal_ids = [(meal_id.strip()) for meal_id in meal_ids if meal_id.strip()]
         break
     except ValueError:
         print("Invalid input. Please enter valid integers.")
 
 # Filter meals and generate valid combinations
 valid_combinations = filter_meals(meals_df, target_calories_per_day, target_protein_per_day,
-                                  exclude_ingredients=exclude_ingredients)
+                                  meal_ids=meal_ids, exclude_ingredients=exclude_ingredients)
 
 # Print the valid meal plans
 if valid_combinations:
