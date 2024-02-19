@@ -50,9 +50,10 @@ while True:
     try:
         meals_per_day = int(input("Enter the number of meals per day (e.g., 3 or 4): "))
         target_calories_per_day = int(input("Enter the target total calorie intake per day: "))
-        target_protein_per_day = float(input("Enter the target protein intake per day: "))
+        target_protein_input = input("Enter the target protein intake per day (leave blank for 0): ")
+        target_protein_per_day = float(target_protein_input) if target_protein_input.strip() else 0.0
         exclude_ingredients = input("Enter ingredients to exclude (comma-separated, leave blank for none): ").split(',')
-        meal_ids = input("Enter list of meal IDs to include (comma-separated, leave blank for all): ").split(',')
+        meal_ids = input("Enter list of meal IDs to include (comma-separated, leave blank for none): ").split(',')
         meal_ids = [(meal_id.strip()) for meal_id in meal_ids if meal_id.strip()]
         break
     except ValueError:
