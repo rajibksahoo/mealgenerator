@@ -2,7 +2,8 @@ import pandas as pd
 import itertools
 
 
-def filter_meals(meals_df, target_calories_per_day, target_protein_per_day, meal_ids=None, exclude_ingredients=None):
+def filter_meals(meals_df, target_calories_per_day, target_protein_per_day, meal_ids=None, exclude_ingredients=None,
+                 x=0):
     # count of meals to be included in our final output
     meal_ids_count = len(meal_ids) if meal_ids else 0
 
@@ -34,7 +35,10 @@ def filter_meals(meals_df, target_calories_per_day, target_protein_per_day, meal
 
         total_calories = sum(meal['Calories'] for meal in combo)
         total_protein = sum(meal['Protein'] for meal in combo)
-        if total_calories == target_calories_per_day and total_protein >= target_protein_per_day:
+
+        # Check if total calories fall within the range of ±x%
+        if (1 - x / 100) * target_calories_per_day <= total_calories <= (
+                1 + x / 100) * target_calories_per_day and total_protein >= target_protein_per_day:
             valid_combinations.append((combo, total_calories, total_protein))
 
     return valid_combinations
@@ -50,6 +54,8 @@ while True:
     try:
         meals_per_day = int(input("Enter the number of meals per day (e.g., 3 or 4): "))
         target_calories_per_day = int(input("Enter the target total calorie intake per day: "))
+        calories_variation_input = input("Enter the % variation allowed for total calories :  ")
+        x = int(calories_variation_input) if calories_variation_input.strip() else 0
         target_protein_input = input("Enter the target protein intake per day (leave blank for 0): ")
         target_protein_per_day = float(target_protein_input) if target_protein_input.strip() else 0.0
         exclude_ingredients = input("Enter ingredients to exclude (comma-separated, leave blank for none): ").split(',')
@@ -57,11 +63,11 @@ while True:
         meal_ids = [(meal_id.strip()) for meal_id in meal_ids if meal_id.strip()]
         break
     except ValueError:
-        print("Invalid input. Please enter valid integers.")
+        print("Invalid input. Please enter valid integers or floats.")
 
 # Filter meals and generate valid combinations
 valid_combinations = filter_meals(meals_df, target_calories_per_day, target_protein_per_day,
-                                  meal_ids=meal_ids, exclude_ingredients=exclude_ingredients)
+                                  meal_ids=meal_ids, exclude_ingredients=exclude_ingredients, x=x)
 
 # Print the valid meal plans
 if valid_combinations:
