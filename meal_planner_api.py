@@ -1,5 +1,4 @@
 import logging
-from logging.handlers import RotatingFileHandler
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pandas as pd
@@ -14,22 +13,11 @@ CORS(app)
 meals_df = pd.read_csv('C:\\Users\\ADMIN\\Documents\\dummy_meals.csv', usecols=['Meal Id', 'Name', 'Calories', 'Protein', 'Ingredients'])
 
 # Configure logging
-logger = logging.getLogger('api_logger')
-logger.setLevel(logging.INFO)
+logging.basicConfig(filename='api.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Create file handler which logs even debug messages
-file_handler = RotatingFileHandler('api.log', maxBytes=100000, backupCount=1)
-file_handler.setLevel(logging.INFO)
-file_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-file_handler.setFormatter(file_formatter)
-logger.addHandler(file_handler)
-
-# Create stream handler to print log messages in the console
-stream_handler = logging.StreamHandler()
-stream_handler.setLevel(logging.INFO)
-stream_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-stream_handler.setFormatter(stream_formatter)
-logger.addHandler(stream_handler)
+def log_input(data):
+    for key, value in data.items():
+        logging.info(f"Input {key}: {value} (Type: {type(value).__name__})")
 
 def filter_meals(meals_df, target_calories_per_day, target_protein_per_day, meals_per_day, meal_ids=None, exclude_ingredients=None, x=0):
     meal_ids_count = len(meal_ids) if meal_ids else 0
@@ -64,15 +52,16 @@ def filter_meals(meals_df, target_calories_per_day, target_protein_per_day, meal
 @app.route('/meal_plans', methods=['POST'])
 def get_meal_plans():
     data = request.json
+
+    # Log input values and their types
+    log_input(data)
+
     meals_per_day = data['meals_per_day']
     target_calories_per_day = data['target_calories_per_day']
     target_protein_per_day = data['target_protein_per_day']
     exclude_ingredients = data.get('exclude_ingredients', [])
     meal_ids = data.get('meal_ids', [])
     x = data.get('calories_variation', 0)
-
-    # Log input values
-    logger.info(f"Received request - meals_per_day: {meals_per_day}, target_calories_per_day: {target_calories_per_day}, target_protein_per_day: {target_protein_per_day}, exclude_ingredients: {exclude_ingredients}, meal_ids: {meal_ids}, calories_variation: {x}")
 
     valid_combinations = filter_meals(meals_df, target_calories_per_day, target_protein_per_day,
                                       meals_per_day, meal_ids=meal_ids, exclude_ingredients=exclude_ingredients, x=x)
