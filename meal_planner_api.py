@@ -1,4 +1,5 @@
 import logging
+import sys
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pandas as pd
@@ -22,6 +23,11 @@ meals_df = pd.read_csv(config['paths']['meals_data_file_path'],
 logging.basicConfig(filename=config['logging']['filename'], level=int(config['logging']['level']),
                     format=config['logging']['format'])
 
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.INFO)
+formatter = logging.Formatter(config['logging']['format'])
+console_handler.setFormatter(formatter)
+logging.getLogger().addHandler(console_handler)
 
 def log_input(data):
     for key, value in data.items():
