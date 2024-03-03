@@ -16,8 +16,7 @@ config = configparser.ConfigParser()
 config.read('config.properties')
 
 # Read meals data from CSV
-meals_df = pd.read_csv(config['paths']['meals_data_file_path'],
-                       usecols=['Meal Id', 'Name', 'Calories', 'Protein', 'Ingredients'])
+meals_df = pd.read_csv(config['paths']['meals_data_file_path'])
 
 # Configure logging
 logging.basicConfig(filename=config['logging']['filename'], level=int(config['logging']['level']),
@@ -28,6 +27,7 @@ console_handler.setLevel(logging.INFO)
 formatter = logging.Formatter(config['logging']['format'])
 console_handler.setFormatter(formatter)
 logging.getLogger().addHandler(console_handler)
+
 
 def log_input(data):
     for key, value in data.items():
@@ -95,14 +95,23 @@ def get_meal_plans():
                 "id": idx,
                 "total_calories": total_calories,
                 "total_protein": total_protein,
-                "meals": [{"name": meal['Name'], "calories": meal['Calories'], "protein": meal['Protein']} for meal in
-                          combo]
+                "meals": [{
+                    "Meal Id": meal['Meal Id'],
+                    "Name": meal['Name'],
+                    "Ingredients": meal['Ingredients'],
+                    "Directions": meal['Directions'],
+                    "Protein": meal['Protein'],
+                    "Carbs": meal['Carbs'],
+                    "Fat": meal['Fat'],
+                    "Calories": meal['Calories'],
+                    "Type": meal['Type']
+                } for meal in combo]
             }
             response["meal_plans"].append(meal_plan)
         return jsonify(response), 200
     else:
         return jsonify({
-                           "message": f"No valid meal plans found for {meals_per_day} meals per day with at least {target_protein_per_day} grams of protein."}), 200
+            "message": f"No valid meal plans found for {meals_per_day} meals per day with at least {target_protein_per_day} grams of protein."}), 200
 
 
 if __name__ == '__main__':
